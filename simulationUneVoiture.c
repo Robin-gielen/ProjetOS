@@ -4,9 +4,11 @@
 #include <sys/shm.h>
 #include <time.h>
 #include <string.h>
+#include <sys/ipc.h>
 
+#include <unistd.h>
 
-#define KEY 12345
+#define KEY 123
 
 
 typedef struct{
@@ -16,8 +18,16 @@ typedef struct{
 	int bestTemps [4];
 	int tourActuel;
 	int secteurActuel;
-	int greeting; 
+	int p1[50][3];
+	int p2[50][3];
+	int p3[50][3];
+	int q1[50][3];
+	int q2[50][3];
+	int q3[50][3];
+	int course[50][3];
 } voiture;
+
+
 
 void main() {
 
@@ -35,32 +45,50 @@ void main() {
 		perror("shmat");
 		exit(1);
 	}
-	(*mesVoitures).voitID = 123456;
-	printf("valeur de *mesVoitures.voitID = %d\n", (voiture*)(*mesVoitures).voitID);
-	fflush(stdout);
-	int secteursMoyenne[3] = {40000, 50000, 45000};
-	srand(time(NULL));   // should only be called once
+	int numerosDesVoitures[20] = {44, 77, 3, 33, 5, 7, 11, 31, 19, 18, 14, 2, 10, 55, 8, 20, 7, 30, 9, 94};
 
-
-	(*mesVoitures).bestTemps[0] = 70000;
-	(*mesVoitures).bestTemps[1] = 90000;
-	(*mesVoitures).bestTemps[2] = 80000;
-	(*mesVoitures).bestTemps[3] = 240000;
-
-	printf("Voiture numéro :    %d   \n", (*mesVoitures).voitID);
-	int j; 
-	for(j=0; j<3; j++) {
-		int delai = rand()%10000; 
-		(*mesVoitures).tempsSecteur[j] = (secteursMoyenne[j] - delai)/1000;
-		if ((*mesVoitures).tempsSecteur[j] < (*mesVoitures).bestTemps[j]) {
-			(*mesVoitures).bestTemps[j] = (*mesVoitures).tempsSecteur[j];
+	int counter = 0;
+	pid_t pid = fork();
+	while(counter < 20) {
+		if(pid < 0) { //erreur
+			printf("fork() failed");
+			//return 1;
 		}
+		else if (pid == 0) { //dans le fils
+			int voitNum = counter;
+			mesVoitures[counter].voitID = numerosDesVoitures[counter];
+			int secteursMoyenne[3] = {40000, 50000, 45000};
+			srand(time(NULL));   // should only be called once
 
-		printf("temps secteur %d: 	%dsec	\n", j+1, (*mesVoitures).tempsSecteur[j]);
-		fflush(stdout);
-	//printf( ((voiture*)ptr_mem_partagee)[5].greeting);
-	
+
+			mesVoitures[counter].bestTemps[0] = 70000;
+			mesVoitures[counter].bestTemps[1] = 90000;
+			mesVoitures[counter].bestTemps[2] = 80000;
+			mesVoitures[counter].bestTemps[3] = 240000;
+
+			printf("Voiture numéro :    %d   \n", mesVoitures[counter].voitID);
+			int j; 
+			for(j=0; j<3; j++) {
+				int delai = rand()%10000; 
+				mesVoitures[counter].tempsSecteur[j] = (secteursMoyenne[j] - delai)/1000;
+				if (mesVoitures[counter].tempsSecteur[j] < mesVoitures[counter].bestTemps[j]) {
+					mesVoitures[counter].bestTemps[j] = mesVoitures[counter].tempsSecteur[j];
+				}
+
+				printf("temps secteur %d: 	%dsec	\n", j+1, mesVoitures[counter].tempsSecteur[j]);
+				//fflush(stdout);
+			}
+		}
+		else {
+			
+		}
+		sleep(1);
+		counter++;
 	}
+
+	
 	shmdt(mesVoitures);
+	struct shmid_ds *buf;
+	shmctl(shm_ID, IPC_RMID, buf);
 }
 
