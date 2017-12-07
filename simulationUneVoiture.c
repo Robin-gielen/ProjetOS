@@ -10,6 +10,7 @@
 
 #define KEY 123
 #define NBR_VOIT 20
+#define NBR_TOUR 10 
 
 typedef struct{
 	int voitID;
@@ -18,6 +19,9 @@ typedef struct{
 	int tourActuel;
 	int usurePneu;
 	int tempsTotal;
+	double probaPitStop;
+	int probaCrash;
+	int tour;
 } voiture;
 
 
@@ -25,10 +29,15 @@ void afficheSeparateur(int n) {
   int i;
    
   for (i = 0; i < n; i++)
-    printf("+---");
+    printf("+--------");
   puts("+");
 }
  
+void clearScreen()
+{
+  const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J";
+  write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
+}
 
 void main() {
 	
@@ -65,24 +74,36 @@ void main() {
 			mesVoitures[counter].voitID = numerosDesVoitures[counter];
 			int secteursMoyenne[3] = {40000, 50000, 45000};
 			srand(time(NULL));   // should only be called once
-
+			mesVoitures[counter].probaPitStop = 1;
+			mesVoitures[counter].probaCrash = 0;
+			mesVoitures[counter].tour = 0;
 
 			mesVoitures[counter].bestTemps[0] = 70000;
 			mesVoitures[counter].bestTemps[1] = 90000;
 			mesVoitures[counter].bestTemps[2] = 80000;
 			mesVoitures[counter].bestTemps[3] = 240000;
-			int l;
-			for(l=0; l<10; l++) {
+			int m;
+			for(m = 0; m < NBR_TOUR; m++) {
+				if(rand()%NBR_TOUR-1 < mesVoitures[counter].probaPitStop) { 
+					mesVoitures[counter].probaCrash += 1;
+					mesVoitures[counter].probaPitStop=1;
+				}
+				else {
+					mesVoitures[counter].probaPitStop += 1;
+				}
+				int l;
 				sleep(2);
 				int j; 
 				for(j=0; j<3; j++) {
+					
 					int delai = rand()%10000; 
 					mesVoitures[counter].tempsSecteur[j] = (secteursMoyenne[j] - delai)/1000;
 					if (mesVoitures[counter].tempsSecteur[j] < mesVoitures[counter].bestTemps[j]) {
 						mesVoitures[counter].bestTemps[j] = mesVoitures[counter].tempsSecteur[j];
 					}
 				}
-			}
+				mesVoitures[counter].tour +=1;
+			}	
 			exit(1);
 		}
 		else {
@@ -90,24 +111,31 @@ void main() {
 		}
 		counter++;
 	}
-	while(1) { //HEIGHT WIDTH
+	int z = 0;
+	while(z < 20000) { //HEIGHT WIDTH
+		system("cls");
 		int i, j;
+		afficheSeparateur(5);			     
+		printf("|Voiture | Sect 1 | Sect 2 | Sect 3 |Temp Tot|\n");
 		for (i = 0; i < NBR_VOIT; i++) {
-			afficheSeparateur(3);
+		int tempTot = 0;
+			afficheSeparateur(5);
+		printf("| N°: %3d", mesVoitures[i].voitID);
 		for (j = 0; j < 3; j++) {
-			printf("|%3d", mesVoitures[i].tempsSecteur[j]);
+			printf("|%3d sec ", mesVoitures[i].tempsSecteur[j]);
+			tempTot += mesVoitures[i].tempsSecteur[j];
 		}
+		printf("|%3d sec pitStop:%d  tour n°: %d", tempTot, mesVoitures[i].probaCrash,mesVoitures[i].tour);
 		puts("|");
 		}
-		afficheSeparateur(3);
-
+		afficheSeparateur(5);
 		/*printf("Voiture numéro :    %d   \n", mesVoitures[k].voitID);
 		int j;
 		for(j = 0; j < 3; j++) {
 			printf("temps secteur %d: 	%dsec	\n", j+1, );
-		}*/					
+		}*/
+		z++;					
 	}
-	
 	shmdt(mesVoitures);
 	struct shmid_ds *buf;
 	shmctl(shm_ID, IPC_RMID, buf);
