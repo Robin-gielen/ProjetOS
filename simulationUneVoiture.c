@@ -10,7 +10,7 @@
 
 #define KEY 123
 #define NBR_VOIT 20
-#define NBR_TOUR 10 
+#define NBR_TOUR 10
 
 typedef struct{
 	int voitID;
@@ -20,7 +20,9 @@ typedef struct{
 	int usurePneu;
 	int tempsTotal;
 	double probaPitStop;
-	int probaCrash;
+	int nbrPitStop;
+	double probaCrash;
+	int nbrCrash;
 	int tour;
 } voiture;
 
@@ -33,11 +35,11 @@ void afficheSeparateur(int n) {
   puts("+");
 }
  
-void clearScreen()
+/*void clearScreen()
 {
   const char *CLEAR_SCREEN_ANSI = "\e[1;1H\e[2J";
   write(STDOUT_FILENO, CLEAR_SCREEN_ANSI, 12);
-}
+}*/
 
 void main() {
 	
@@ -75,7 +77,9 @@ void main() {
 			int secteursMoyenne[3] = {40000, 50000, 45000};
 			srand(time(NULL));   // should only be called once
 			mesVoitures[counter].probaPitStop = 1;
+			mesVoitures[counter].nbrPitStop = 0;
 			mesVoitures[counter].probaCrash = 0;
+			mesVoitures[counter].nbrCrash = 0;
 			mesVoitures[counter].tour = 0;
 
 			mesVoitures[counter].bestTemps[0] = 70000;
@@ -84,18 +88,27 @@ void main() {
 			mesVoitures[counter].bestTemps[3] = 240000;
 			int m;
 			for(m = 0; m < NBR_TOUR; m++) {
-				if(rand()%NBR_TOUR-1 < mesVoitures[counter].probaPitStop) { 
-					mesVoitures[counter].probaCrash += 1;
-					mesVoitures[counter].probaPitStop=1;
+				sleep(1);
+				if(rand()%((NBR_TOUR-1)*2) < mesVoitures[counter].probaPitStop) { 
+					mesVoitures[counter].probaPitStop=0;
+					mesVoitures[counter].nbrPitStop += 1;
 				}
 				else {
 					mesVoitures[counter].probaPitStop += 1;
+				}
+				if(rand()%(1500) < mesVoitures[counter].probaCrash) { 
+					mesVoitures[counter].probaCrash = 1;
+					mesVoitures[counter].nbrCrash += 1;
+					exit(1);
+				}
+				else {
+					mesVoitures[counter].probaCrash += 1;
 				}
 				int l;
 				sleep(2);
 				int j; 
 				for(j=0; j<3; j++) {
-					
+					sleep(1);
 					int delai = rand()%10000; 
 					mesVoitures[counter].tempsSecteur[j] = (secteursMoyenne[j] - delai)/1000;
 					if (mesVoitures[counter].tempsSecteur[j] < mesVoitures[counter].bestTemps[j]) {
@@ -112,7 +125,19 @@ void main() {
 		counter++;
 	}
 	int z = 0;
-	while(z < 20000) { //HEIGHT WIDTH
+	while(z < 40000) { //HEIGHT WIDTH
+		/*
+		Gère l'étape de la course à laquelle on est
+		if(argv[1] == "p") {
+			
+		}
+		else if(argv[1] == "q") {
+			
+		}
+		else if(argv[1] == "f") {
+			
+		}*/
+
 		system("cls");
 		int i, j;
 		afficheSeparateur(5);			     
@@ -125,7 +150,7 @@ void main() {
 			printf("|%3d sec ", mesVoitures[i].tempsSecteur[j]);
 			tempTot += mesVoitures[i].tempsSecteur[j];
 		}
-		printf("|%3d sec pitStop:%d  tour n°: %d", tempTot, mesVoitures[i].probaCrash,mesVoitures[i].tour);
+		printf("|%3d sec pitStop:%d  crash:%d  tour n°: %d", tempTot, mesVoitures[i].nbrPitStop, mesVoitures[i].nbrCrash, mesVoitures[i].tour);
 		puts("|");
 		}
 		afficheSeparateur(5);
